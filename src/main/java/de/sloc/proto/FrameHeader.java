@@ -1,4 +1,4 @@
-package de.sloc.proto.ethernet;
+package de.sloc.proto;
 
 import javax.xml.bind.DatatypeConverter;
 

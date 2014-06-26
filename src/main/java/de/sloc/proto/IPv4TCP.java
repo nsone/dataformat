@@ -1,4 +1,4 @@
-package de.sloc.proto.ethernet;
+package de.sloc.proto;
 
 import de.sloc.dataformat.PDUElement;
 import de.sloc.dataformat.PDUElement.Type;
