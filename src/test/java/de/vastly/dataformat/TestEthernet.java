@@ -9,10 +9,11 @@ import javax.xml.bind.DatatypeConverter;
 import org.junit.Assert;
 import org.junit.Test;
 
-import de.vastly.proto.ethernet.FrameHeader;
-import de.vastly.proto.ethernet.IPv4;
-import de.vastly.proto.ethernet.IPv4TCP;
-import de.vastly.proto.ethernet.Constants.Ethertype;
+import de.sloc.dataformat.PDU;
+import de.sloc.proto.ethernet.FrameHeader;
+import de.sloc.proto.ethernet.IPv4;
+import de.sloc.proto.ethernet.IPv4TCP;
+import de.sloc.proto.ethernet.Constants.Ethertype;
 
 public class TestEthernet
 {
