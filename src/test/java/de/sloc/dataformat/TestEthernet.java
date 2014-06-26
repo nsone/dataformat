@@ -10,10 +10,10 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import de.sloc.dataformat.PDU;
-import de.sloc.proto.ethernet.FrameHeader;
-import de.sloc.proto.ethernet.IPv4;
-import de.sloc.proto.ethernet.IPv4TCP;
-import de.sloc.proto.ethernet.Constants.Ethertype;
+import de.sloc.proto.FrameHeader;
+import de.sloc.proto.IPv4;
+import de.sloc.proto.IPv4TCP;
+import de.sloc.proto.Constants.Ethertype;
 
 public class TestEthernet
 {
