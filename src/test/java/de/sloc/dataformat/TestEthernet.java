@@ -1,4 +1,4 @@
-package de.vastly.dataformat;
+package de.sloc.dataformat;
 
 import static org.junit.Assert.*;
 
