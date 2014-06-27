@@ -64,7 +64,6 @@ public static enum Feature implements Bitmappable {
 	FEATURE2(0x02),
 	FEATURE3(0x04);
 
-
 	protected static Map<Long, Feature> valueToFeature = new HashMap<>();
 
 	static {
