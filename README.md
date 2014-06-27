@@ -47,7 +47,7 @@ os.write(arp);
 ```
 
 
-#### POJO Presentation
+#### POJO Representation
 ```java
 public class MyPDU implements PDUSerializable {
 	@PDUElement(order = 1, type = Type.UNSIGNED_INTEGER, length = 3)
