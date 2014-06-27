@@ -106,7 +106,6 @@ public static enum Feature implements Bitmappable {
 ```java
 protected static final int DESCRIPTION_STRING_LENGTH = 256;
 
-
 @PDUElement(order = 1, type = FIXED_LENGTH_STRING, length = DESCRIPTION_STRING_LENGTH)
 protected String manufacturerDescription;
 ```
