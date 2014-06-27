@@ -9,8 +9,7 @@ Dataformat is a Java Annotation-based binary format to POJO converter
 ```java
 PDUInputStream<FrameHeader> is = new PDUInputStream<>(FrameHeader.class, parentIs);
 FrameHeader frame = is.readPDU();
-if(frame.getEthertype() == Ethertype.ARP)
-{
+if(frame.getEthertype() == Ethertype.ARP) {
    Arp arp = (Arp) frame;
 }
 ```
@@ -37,8 +36,7 @@ os.write(arp);
 
 #### POJO Presentation
 ```java
-public class OFLinkDiscovery extends FrameHeader
-{
+public class OFLinkDiscovery extends FrameHeader {
 	@PDUElement(order = 1, type = Type.UNSIGNED_INTEGER, length = 3)
 	protected long id;
 
@@ -48,7 +46,6 @@ public class OFLinkDiscovery extends FrameHeader
 	@PDUElement(order = 3, type = Type.UNSIGNED_INTEGER, length = 4)
 	protected long portNumber;
 
-	
 	protected OFLinkDiscovery(){}
 }
 ```
@@ -62,8 +59,7 @@ protected Set<Feature> currentFeatures;
 
 **my.package.Feature**
 ```java
-public static enum Feature implements Bitmappable
-{
+public static enum Feature implements Bitmappable {
 	FEATURE1(0x01),
 	FEATURE2(0x02),
 	FEATURE3(0x04);
@@ -71,29 +67,23 @@ public static enum Feature implements Bitmappable
 
 	protected static Map<Long, Feature> valueToFeature = new HashMap<>();
 
-	static
-	{
-		for (Feature feature : EnumSet.allOf(Feature.class))
-		{
+	static {
+		for (Feature feature : EnumSet.allOf(Feature.class)) {
 			valueToFeature.put(feature.getValue(), portFeature);
 		}
 	}
 
-	public static Feature getByValue(long value)
-	{
+	public static Feature getByValue(long value) {
 		return valueToFeature.get(value);
 	}
 
 	protected long value;
 
-	Feature(long value)
-	{
+	Feature(long value) {
 		this.value = value;
 	}
 
-	@Override
-	public long getValue()
-	{
+	public long getValue() {
 		return value;
 	}
 }
@@ -118,18 +108,15 @@ protected Ethertype protocolType;
 
 **Ethertype**
 ```java
-public enum Ethertype implements AsNumber
-{
+public enum Ethertype implements AsNumber {
 	IPV4(0x0800, IPv4.class),
 	ARP(0x0806, Arp.class),
 	UNKNOWN(0xFFFF, RawFrame.class);
 
 	protected static Map<Integer, Ethertype> reverseMap = new HashMap<>();
 
-	static
-	{
-		for (Ethertype type : Ethertype.values())
-		{
+	static {
+		for (Ethertype type : Ethertype.values()) {
 			reverseMap.put(type.getValue(), type);
 		}
 	}
@@ -137,36 +124,28 @@ public enum Ethertype implements AsNumber
 	protected int value;
 	protected Class<? extends FrameHeader> implementor;
 
-	Ethertype(int value, Class<? extends FrameHeader> implementor)
-	{
+	Ethertype(int value, Class<? extends FrameHeader> implementor) {
 		this.value = value;
 		this.implementor = implementor;
 	}
 
-	public int getValue()
-	{
+	public int getValue() {
 		return value;
 	}
 
-	@Override
-	public Number getNumberValue()
-	{
+	public Number getNumberValue() {
 		return value;
 	}
 
-	public static Ethertype getByValue(int value)
-	{
+	public static Ethertype getByValue(int value) {
 		Ethertype result = reverseMap.get(value);
 
-		if (result == null)
-		{
+		if (result == null) {
 			result = UNKNOWN;
 			result.value = value;
 		}
-
 		return result;
 	}
-
 }
 ```
 
@@ -205,8 +184,7 @@ protected SomeOtherPDU subPDU;
 
 **SomeOtherPDU**
 ```java
-public class SomeOtherPDU implements PDUSerializable
-{
+public class SomeOtherPDU implements PDUSerializable {
 	@PDUElement(order = 1, type = UNSIGNED_INTEGER, length = 2)
 	protected int age;
 
@@ -249,8 +227,7 @@ protected List<Long> fourLongs;
 *If you have a group of PDUs that share a common header, you can do this*
 
 ```java
-public abstract class CommonHeader implements Serializable
-{
+public abstract class CommonHeader implements Serializable {
 ...
 3 fields of common header
 ...
@@ -263,30 +240,25 @@ protected ProtocolType type;
 
 
 ```java
-public class Type0 extends CommonHeader
-{
+public class Type0 extends CommonHeader {
 ...
 }
 ```
 
 **ProtocolType**
 ```java
-public static enum ProtocolType implements AsNumber, ImplementorMapped
-{
+public static enum ProtocolType implements AsNumber, ImplementorMapped {
 	TYPE0(0, Type0.class),
 	Type1(1, Type1.class);
 	protected static Map<Integer, ProtocolType> valueToActionType = new HashMap<>();
 
-	static
-	{
-		for (ProtocolType type : EnumSet.allOf(ProtocolType.class))
-		{
+	static {
+		for (ProtocolType type : EnumSet.allOf(ProtocolType.class)) {
 			valueToType.put(type.getValue(), type);
 		}
 	}
 
-	public static ProtocolType getByValue(int value)
-	{
+	public static ProtocolType getByValue(int value) {
 		return valueToType.get(value);
 	}
 
@@ -294,26 +266,20 @@ public static enum ProtocolType implements AsNumber, ImplementorMapped
 
 	protected Class<? extends Type> implementor;
 
-	ProtocolType(int value, Class<? extends CommonHeader> implementor)
-	{
+	ProtocolType(int value, Class<? extends CommonHeader> implementor) {
 		this.value = value;
 		this.implementor = implementor;
 	}
 
-	@Override
-	public Class<? extends PDUSerializable> getImplementor(String... args)
-	{
+	public Class<? extends PDUSerializable> getImplementor(String... args) {
 		return implementor;
 	}
 
-	@Override
-	public Number getNumberValue()
-	{
+	public Number getNumberValue() {
 		return value;
 	}
 
-	public int getValue()
-	{
+	public int getValue() {
 		return value;
 	}
 	
@@ -324,8 +290,7 @@ public static enum ProtocolType implements AsNumber, ImplementorMapped
 ```java
 PDUInputStream<CommonHeader> is = new PDUInputStream<>(CommonHeader.class, parentIs);
 CommonHeader pdu = is.readPDU();
-if(pdu.getType() == ProtocolType.TYPE0)
-{
+if(pdu.getType() == ProtocolType.TYPE0) {
    Type0 pduType0 = (Type0) pdu;
 }
 ```
