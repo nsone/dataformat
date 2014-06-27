@@ -108,9 +108,9 @@ protected Ethertype protocolType;
 **Ethertype**
 ```java
 public enum Ethertype implements AsNumber {
-	IPV4(0x0800, IPv4.class),
-	ARP(0x0806, Arp.class),
-	UNKNOWN(0xFFFF, RawFrame.class);
+	IPV4(0x0800),
+	ARP(0x0806),
+	UNKNOWN(0xFFFF);
 
 	protected static Map<Integer, Ethertype> reverseMap = new HashMap<>();
 
@@ -121,11 +121,9 @@ public enum Ethertype implements AsNumber {
 	}
 
 	protected int value;
-	protected Class<? extends FrameHeader> implementor;
 
-	Ethertype(int value, Class<? extends FrameHeader> implementor) {
+	Ethertype(int value) {
 		this.value = value;
-		this.implementor = implementor;
 	}
 
 	public int getValue() {
