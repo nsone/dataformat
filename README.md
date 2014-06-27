@@ -52,3 +52,53 @@ public class OFLinkDiscovery extends FrameHeader
 	protected OFLinkDiscovery(){}
 }
 ```
+
+### Bitmaps
+
+```java
+@PDUElement(order = 8, type = BITMAP, length = 4, args = "my.package.Feature")
+protected Set<Feature> currentFeatures;
+```
+
+**my.package.Feature**
+```java
+public static enum Feature implements Bitmappable
+{
+	FEATURE1(0x01),
+	FEATURE2(0x02),
+	FEATURE3(0x04);
+
+
+	protected static Map<Long, Feature> valueToFeature = new HashMap<>();
+
+	static
+	{
+		for (Feature feature : EnumSet.allOf(Feature.class))
+		{
+			valueToFeature.put(feature.getValue(), portFeature);
+		}
+	}
+
+	public static Feature getByValue(long value)
+	{
+		return valueToFeature.get(value);
+	}
+
+	protected long value;
+
+	Feature(long value)
+	{
+		this.value = value;
+	}
+
+	@Override
+	public long getValue()
+	{
+		return value;
+	}
+}
+```
+
+
+
+
