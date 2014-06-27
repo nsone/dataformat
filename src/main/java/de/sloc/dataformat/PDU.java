@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import de.vastly.common.Utility;
+import javax.xml.bind.DatatypeConverter;
 
 public class PDU
 {
@@ -699,7 +699,7 @@ public class PDU
 						switch (pduElement.type())
 						{
 							case RAW:
-								formattedValue = Utility.byteArrayToHexString(value instanceof byte[] ? ((byte[]) value)
+								formattedValue = DatatypeConverter.printHexBinary(value instanceof byte[] ? ((byte[]) value)
 								        : new byte[] { (byte) value });
 								break;
 							default:

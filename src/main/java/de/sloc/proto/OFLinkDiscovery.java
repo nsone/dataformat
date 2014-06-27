@@ -2,9 +2,10 @@ package de.sloc.proto;
 
 import java.math.BigInteger;
 
+import javax.xml.bind.DatatypeConverter;
+
 import de.sloc.dataformat.PDUElement;
 import de.sloc.dataformat.PDUElement.Type;
-import de.vastly.common.Utility;
 
 public class OFLinkDiscovery extends FrameHeader
 {
@@ -17,8 +18,7 @@ public class OFLinkDiscovery extends FrameHeader
 	@PDUElement(order = 3, type = Type.PADDING, length = 24)
 	protected byte[] padding;
 
-	protected static final byte[] DEFAULT_MAC = Utility.hexStringToByteArray("ACDE480FBABE");
-
+	protected static final byte[] DEFAULT_MAC = DatatypeConverter.parseHexBinary("ACDE480FBABE");
 
 	protected OFLinkDiscovery()
 	{

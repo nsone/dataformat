@@ -2,9 +2,10 @@ package de.sloc.proto;
 
 import java.net.InetAddress;
 
+import javax.xml.bind.DatatypeConverter;
+
 import de.sloc.dataformat.PDUElement;
 import de.sloc.dataformat.PDUElement.Type;
-import de.vastly.common.Utility;
 
 public class Arp extends FrameHeader
 {
@@ -40,8 +41,8 @@ public class Arp extends FrameHeader
 		super();
 	}
 
-	public Arp(byte[] targetAddress, byte[] sourceAddress, Ethertype protocolType, ArpAddressType addressType, ArpOperation operation, byte[] sourceMac,
-	           InetAddress nlSourceAddress, byte[] destinationMac, InetAddress nlDestinationAddress)
+	public Arp(byte[] targetAddress, byte[] sourceAddress, Ethertype protocolType, ArpAddressType addressType, ArpOperation operation,
+	           byte[] sourceMac, InetAddress nlSourceAddress, byte[] destinationMac, InetAddress nlDestinationAddress)
 	{
 		super(targetAddress, sourceAddress, Ethertype.ARP);
 		this.addressType = addressType;
@@ -107,7 +108,7 @@ public class Arp extends FrameHeader
 		}
 		else if (operation == ArpOperation.REPLY)
 		{
-			return nlSourceAddress + " is at " + Utility.byteArrayToHexString(sourceAddress);
+			return nlSourceAddress + " is at " + DatatypeConverter.printHexBinary(sourceAddress);
 		}
 		else
 		{
