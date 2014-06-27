@@ -246,7 +246,7 @@ protected List<Long> fourLongs;
 
 ### Subtypes
 
-**If you have a group of PDUs that share a common header, you can do this**
+*If you have a group of PDUs that share a common header, you can do this*
 
 ```java
 public abstract class CommonHeader implements Serializable
