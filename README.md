@@ -2,8 +2,6 @@
 
 dataformat is a Java annotation-based binary format to POJO converter
 
-## Introduction
-
 dataformat converts binary data as read from a Java InputStream to Plain-old-JavaObjects (POJO) 
 and converts those POJOs back to binary data that can be fed to a 
 Java OutputStream. Whenever dealing with binary protocols in Java, one has to write 
