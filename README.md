@@ -1,6 +1,6 @@
 # Dataformat
 
-Dataformat is a binary format to POJO converter
+Dataformat is a Java Annotation-based binary format to POJO converter
 
 ## Examples
 
@@ -56,7 +56,7 @@ public class OFLinkDiscovery extends FrameHeader
 ### Bitmaps
 
 ```java
-@PDUElement(order = 8, type = BITMAP, length = 4, args = "my.package.Feature")
+@PDUElement(order = 1, type = BITMAP, length = 4, args = "my.package.Feature")
 protected Set<Feature> currentFeatures;
 ```
 
@@ -99,6 +99,223 @@ public static enum Feature implements Bitmappable
 }
 ```
 
+### Fixed-length Strings
+
+```java
+protected static final int DESCRIPTION_STRING_LENGTH = 256;
 
 
+@PDUElement(order = 1, type = FIXED_LENGTH_STRING, length = DESCRIPTION_STRING_LENGTH)
+protected String manufacturerDescription;
+```
 
+### Values as enums
+
+```java
+@PDUElement(order = 2, type = Type.UNSIGNED_INTEGER, length = 2)
+protected Ethertype protocolType;
+```
+
+** Ethertype **
+```java
+public enum Ethertype implements AsNumber
+{
+	IPV4(0x0800, IPv4.class),
+	ARP(0x0806, Arp.class),
+	UNKNOWN(0xFFFF, RawFrame.class);
+
+	protected static Map<Integer, Ethertype> reverseMap = new HashMap<>();
+
+	static
+	{
+		for (Ethertype type : Ethertype.values())
+		{
+			reverseMap.put(type.getValue(), type);
+		}
+	}
+
+	protected int value;
+	protected Class<? extends FrameHeader> implementor;
+
+	Ethertype(int value, Class<? extends FrameHeader> implementor)
+	{
+		this.value = value;
+		this.implementor = implementor;
+	}
+
+	public int getValue()
+	{
+		return value;
+	}
+
+	@Override
+	public Number getNumberValue()
+	{
+		return value;
+	}
+
+	public static Ethertype getByValue(int value)
+	{
+		Ethertype result = reverseMap.get(value);
+
+		if (result == null)
+		{
+			result = UNKNOWN;
+			result.value = value;
+		}
+
+		return result;
+	}
+
+}
+```
+
+### Length fields
+
+*If a field defines the length of the whole PDU, Type.LENGTH can be used. As a rule of thumb, provide the length-attribute whenever possible. 
+If there are dynamic length fields, dataformat tries to derive their length.*
+
+```java
+@PDUElement(order = 2, type = Type.LENGTH, length = 1)
+protected short length;
+```
+
+*If a field defines the length of one or more other fields, Type.LENGTH with references can be used*
+
+```java
+@PDUElement(order = 3, type = Type.LENGTH, references = "sourceMac,destinationMac", length = 1)
+protected short addressLength;
+...
+@PDUElement(order = 6, type = Type.RAW)
+protected byte[] sourceMac;
+...
+@PDUElement(order = 8, type = Type.RAW)
+protected byte[] destinationMac;
+```
+
+
+### Structures
+
+*If you want to have PDU-structures as instances, use Type.STRUCTURE. If you omit the length of the structure, there must be a length field within it.*
+
+```java
+@PDUElement(order = 11, type = STRUCTURE)
+protected SomeOtherPDU subPDU;
+```
+
+**SomeOtherPDU**
+```java
+public class SomeOtherPDU implements PDUSerializable
+{
+	@PDUElement(order = 1, type = UNSIGNED_INTEGER, length = 2)
+	protected int age;
+
+	@PDUElement(order = 2, type = LENGTH, length = 2)
+	protected int length;
+}
+```
+
+### Padding
+
+*If you want to pad multiple fixed bytes in a PDU, you can do this*
+```java
+@PDUElement(order = 1, type = PADDING, length = 2)
+protected byte[] twoBytesOfZeros;
+```
+
+*If you want to pad a field to a word boundary, do this
+```java
+@PDUElement(order = 1, type = STRUCTURE, pad = 8)
+protected SomeOtherPDU subPDU;
+```
+
+
+### Collections
+
+**Structures**
+```java
+@PDUElement(order = 14, type = STRUCTURE_COLLECTION, args = "my.package.Element")
+protected Set<Element> elements;
+```
+
+**Unsigned Integers**
+```java
+@PDUElement(order = 3, type = UNSIGNED_INTEGER_COLLECTION, length = 16, args = { "java.lang.Long", "4" })
+protected List<Long> fourLongs;
+```
+
+### Subtypes
+
+**If you have a group of PDUs that share a common header, you can do this**
+
+```java
+public abstract class CommonHeader implements Serializable
+{
+...
+3 fields of common header
+...
+@PDUElement(order = 4, type = UNSIGNED_INTEGER, length = 1)
+@PDUSubtype
+protected ProtocolType type;
+...
+}
+```
+
+
+```java
+public class Type0 extends CommonHeader
+{
+...
+}
+
+
+**ProtocolType**
+```java
+public static enum ProtocolType implements AsNumber, ImplementorMapped
+{
+	TYPE0(0, Type0.class),
+	Type1(1, Type1.class);
+	protected static Map<Integer, ProtocolType> valueToActionType = new HashMap<>();
+
+	static
+	{
+		for (ProtocolType type : EnumSet.allOf(ProtocolType.class))
+		{
+			valueToType.put(type.getValue(), type);
+		}
+	}
+
+	public static ProtocolType getByValue(int value)
+	{
+		return valueToType.get(value);
+	}
+
+	protected int value;
+
+	protected Class<? extends Type> implementor;
+
+	ProtocolType(int value, Class<? extends CommonHeader> implementor)
+	{
+		this.value = value;
+		this.implementor = implementor;
+	}
+
+	@Override
+	public Class<? extends PDUSerializable> getImplementor(String... args)
+	{
+		return implementor;
+	}
+
+	@Override
+	public Number getNumberValue()
+	{
+		return value;
+	}
+
+	public int getValue()
+	{
+		return value;
+	}
+	
+}
+```
