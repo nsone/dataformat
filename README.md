@@ -223,7 +223,7 @@ public class SomeOtherPDU implements PDUSerializable
 protected byte[] twoBytesOfZeros;
 ```
 
-*If you want to pad a field to a word boundary, do this
+*If you want to pad a field to a word boundary, do this*
 ```java
 @PDUElement(order = 1, type = STRUCTURE, pad = 8)
 protected SomeOtherPDU subPDU;
@@ -267,7 +267,7 @@ public class Type0 extends CommonHeader
 {
 ...
 }
-
+```
 
 **ProtocolType**
 ```java
