@@ -2,6 +2,21 @@
 
 dataformat is a Java annotation-based binary format to POJO converter
 
+## Introduction
+
+dataformat converts binary data as read from a Java InputStream to Plain-old-JavaObjects (POJO) 
+and converts those POJOs back to binary data that can be fed to a 
+Java OutputStream. Whenever dealing with binary protocols in Java, one has to write 
+parsers and message encoders. While the Java presentation of the protocol model 
+can be kept in one place (i.e. one class per PDU type), the programmer has to write 
+specific code for encoding the model to binary data and specific code for decoding 
+binary data back to the model. Encoding and decoding usually produces two distinct 
+types of code, even so they are coupled to each other. As soon as the model changes, 
+both encoding and decoding has to be changed. dataformat solves this by defining a 
+pattern of Java Annotations and inheritance to describe binary formats within POJOs. 
+Using the Java reflection API, the annotations within POJOs can be used to do the 
+described binary encoding and decoding.  
+
 ## Examples
 
 ### Read from java.io.InputStream
