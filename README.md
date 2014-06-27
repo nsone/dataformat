@@ -116,7 +116,7 @@ protected String manufacturerDescription;
 protected Ethertype protocolType;
 ```
 
-** Ethertype **
+**Ethertype**
 ```java
 public enum Ethertype implements AsNumber
 {
