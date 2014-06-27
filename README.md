@@ -49,7 +49,7 @@ os.write(arp);
 
 #### POJO Presentation
 ```java
-public class OFLinkDiscovery extends FrameHeader {
+public class MyPDU implements PDUSerializable {
 	@PDUElement(order = 1, type = Type.UNSIGNED_INTEGER, length = 3)
 	protected long id;
 
@@ -59,7 +59,7 @@ public class OFLinkDiscovery extends FrameHeader {
 	@PDUElement(order = 3, type = Type.UNSIGNED_INTEGER, length = 4)
 	protected long portNumber;
 
-	protected OFLinkDiscovery(){}
+	protected MyPDU(){}
 }
 ```
 
