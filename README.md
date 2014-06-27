@@ -1,6 +1,6 @@
 # dataformat
 
-dataformat is a Java Annotation-based binary format to POJO converter
+dataformat is a Java annotation-based binary format to POJO converter
 
 ## Examples
 
