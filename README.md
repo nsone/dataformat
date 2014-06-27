@@ -9,7 +9,7 @@ Dataformat is a Java Annotation-based binary format to POJO converter
 ```java
 PDUInputStream<FrameHeader> is = new PDUInputStream<>(FrameHeader.class, parentIs);
 FrameHeader frame = is.readPDU();
-if(frame.getEthertype == Ethertype.ARP)
+if(frame.getEthertype() == Ethertype.ARP)
 {
    Arp arp = (Arp) frame;
 }
@@ -317,5 +317,15 @@ public static enum ProtocolType implements AsNumber, ImplementorMapped
 		return value;
 	}
 	
+}
+```
+
+**Example**
+```java
+PDUInputStream<CommonHeader> is = new PDUInputStream<>(CommonHeader.class, parentIs);
+CommonHeader pdu = is.readPDU();
+if(pdu.getType() == ProtocolType.TYPE0)
+{
+   Type0 pduType0 = (Type0) pdu;
 }
 ```
