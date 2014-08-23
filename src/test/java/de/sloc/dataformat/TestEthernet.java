@@ -1,19 +1,17 @@
 package de.sloc.dataformat;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.net.InetAddress;
 
 import javax.xml.bind.DatatypeConverter;
 
-import org.junit.Assert;
 import org.junit.Test;
 
-import de.sloc.dataformat.PDU;
-import de.sloc.proto.FrameHeader;
-import de.sloc.proto.IPv4;
-import de.sloc.proto.IPv4TCP;
 import de.sloc.proto.Constants.Ethertype;
+import de.sloc.proto.FrameHeader;
+import de.sloc.proto.IPv4TCP;
 
 public class TestEthernet
 {

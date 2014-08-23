@@ -3,9 +3,9 @@ package de.sloc.proto;
 import javax.xml.bind.DatatypeConverter;
 
 import de.sloc.dataformat.PDUElement;
+import de.sloc.dataformat.PDUElement.Type;
 import de.sloc.dataformat.PDUSerializable;
 import de.sloc.dataformat.PDUSubtype;
-import de.sloc.dataformat.PDUElement.Type;
 
 public abstract class FrameHeader implements PDUSerializable, Constants
 {

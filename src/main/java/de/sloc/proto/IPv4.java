@@ -1,8 +1,8 @@
 package de.sloc.proto;
 
 import de.sloc.dataformat.PDUElement;
-import de.sloc.dataformat.PDUSubtype;
 import de.sloc.dataformat.PDUElement.Type;
+import de.sloc.dataformat.PDUSubtype;
 
 public class IPv4 extends FrameHeader
 {
