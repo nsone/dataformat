@@ -258,7 +258,7 @@ public class Type0 extends CommonHeader {
 ```java
 public static enum ProtocolType implements AsNumber, ImplementorMapped {
 	TYPE0(0, Type0.class),
-	Type1(1, Type1.class);
+	TYPE1(1, Type1.class);
 	protected static Map<Integer, ProtocolType> valueToActionType = new HashMap<>();
 
 	static {
