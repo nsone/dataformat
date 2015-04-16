@@ -326,7 +326,18 @@ public class PDU
 
         return result;
     }
-
+    
+    /**
+     * TODO Speedup/cache
+     * 
+     * 
+     * 
+     * @param klass
+     * @param data
+     * @param startAtOffset
+     * @return
+     * @throws PDUException
+     */
     protected static <T extends PDUSerializable> Class<T> resolveInstantiableClass(Class<T> klass, byte[] data, int startAtOffset)
                                                                                                                                   throws PDUException
     {
@@ -388,7 +399,11 @@ public class PDU
             int length = element.length();
 
             byte[] typeValueBytes = new byte[length];
+
             System.arraycopy(data, offset, typeValueBytes, 0, length);
+
+            // System.err.println("value bytes: " +
+            // DatatypeConverter.printHexBinary(data));
 
             Constructor<? extends BinaryType> constructor = findAssignableConstructor(element.type().getDataClass(), typeValueBytes.getClass());
 
@@ -419,7 +434,8 @@ public class PDU
         try
         {
             // System.err.println("DECODING klass " + klass.getCanonicalName() +
-            // " starting at offset " + offset + " data.length " + data.length);
+            // " starting at offset " + offset + " data.length " + data.length +
+            // " data " + DatatypeConverter.printHexBinary(data));
 
             Class<T> instantiableClass = resolveInstantiableClass(klass, data, offset);
             // System.out.println("found instantiable class " +
@@ -465,16 +481,6 @@ public class PDU
                     LengthFieldMetadata lengthFieldMetadata = new LengthFieldMetadata(field.getName(), offset, pduElement.length(), pduElement.args());
                     lengthFieldMetadata.setValue((int) lengthValue);
 
-                    for (String targetField : pduElement.references().split(","))
-                    {
-                        fieldNameToLengthFieldMetadata.put(targetField, lengthFieldMetadata);
-
-                        if (targetField.equals(PDUElement.Type.LENGTH_REFERENCE_PDU_ALL))
-                        {
-                            restLength += lengthValue;
-                        }
-                    }
-
                     if (!pduElement.referencesMethod().equals(""))
                     {
                         field.set(pdu, (int) lengthValue);
@@ -489,6 +495,18 @@ public class PDU
                             lengthFieldMetadata.setValue(entry.getValue());
 
                             fieldNameToLengthFieldMetadata.put(entry.getKey(), lengthFieldMetadata);
+                        }
+                    }
+                    else
+                    {
+                        for (String targetField : pduElement.references().split(","))
+                        {
+                            fieldNameToLengthFieldMetadata.put(targetField, lengthFieldMetadata);
+
+                            if (targetField.equals(PDUElement.Type.LENGTH_REFERENCE_PDU_ALL))
+                            {
+                                restLength += lengthValue;
+                            }
                         }
                     }
                 }
@@ -514,7 +532,8 @@ public class PDU
                     }
                 }
 
-//                System.out.println("klass: " + field.getDeclaringClass() + " field " + field.getName() + " offset: " + offset + " length: " + length);
+//                System.out.println("klass: " + field.getDeclaringClass() + " field " + field.getName() + " offset: " + offset + " length: " + length
+//                        + " total: " + data.length);
 
                 // copy data into slice
 
@@ -538,7 +557,8 @@ public class PDU
                     length = resolveLength((PDUSerializable) fieldValue);
                 }
 
-//                System.out.println("field " + field.getName() + " set to " + field.get(pdu) + " at offset " + offset + " read length: " + length);
+//                System.out.println("field " + field.getName() + " set to " + field.get(pdu) + " at offset " + offset + " read length: " + length
+//                        + " slice: " + DatatypeConverter.printHexBinary(slice));
 
                 // ignore n bytes padding
                 int padding = pduElement.pad();
@@ -547,8 +567,11 @@ public class PDU
                     length += resolvePaddingLength(padding, length);
                 }
 
+
                 restLength -= length;
                 offset += length;
+
+//                System.out.println("restLength: " + restLength + "\n");
             }
 
             return pdu;

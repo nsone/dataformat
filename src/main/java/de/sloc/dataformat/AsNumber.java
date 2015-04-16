@@ -6,9 +6,5 @@ public interface AsNumber
 
 	public static final String FACTORY_METHOD_NAME = "getByValue";
 
-	public static void main(String[] args) {
-		
-	}
-
 
 }

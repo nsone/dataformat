@@ -15,6 +15,8 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
     protected int lengthFieldLength;
     protected int delta;
 
+    // protected ExecutorService es = Executors.newFixedThreadPool(3);
+
     public PDUInputStream(Class<T> pduClass, InputStream inputStream)
     {
         this.pduClass = pduClass;
@@ -75,6 +77,11 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
                     inputStream.mark(MAX_SIZE);
                 }
 
+                // FutureTask<T> task = new FutureTask<T>(() ->
+                // PDU.decode(message, pduClass, 0));
+                // es.submit(task);
+                // return task;
+
                 // long before = System.currentTimeMillis();
                 T pdu = PDU.decode(message, pduClass, 0);
                 // System.err.println("Decoded message in: " +
@@ -85,5 +92,4 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
         }
         return null;
     }
-
 }
