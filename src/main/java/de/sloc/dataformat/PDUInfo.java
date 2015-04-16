@@ -14,4 +14,5 @@ import java.lang.annotation.Target;
 @Inherited
 public @interface PDUInfo
 {
+    String references() default "";
 }

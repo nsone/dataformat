@@ -104,10 +104,10 @@ public class StructureCollection implements BinaryType
 				}
 
 				restCount -= consumedLength;
-				// System.err.println("Structure collection: convert to " +
-				// elementType + " consumed length: " + consumedLength +
-				// " bytes, rest count: "
-				// + restCount);
+//				 System.err.println("Structure collection: convert to " +
+//				 elementType + " consumed length: " + consumedLength +
+//				 " bytes, rest count: "
+//				 + restCount);
 				result.add(packetSerializable);
 			}
 			else

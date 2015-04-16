@@ -29,6 +29,8 @@ public @interface PDUElement
 	String[] args() default {};
 
 	String references() default LENGTH_REFERENCE_PDU_ALL;
+	
+	String referencesMethod() default "";
 
 	public enum Type
 	{
