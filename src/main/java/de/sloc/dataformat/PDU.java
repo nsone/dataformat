@@ -14,58 +14,71 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import javax.xml.bind.DatatypeConverter;
 
 public class PDU
 {
-    protected static Map<Class<?>, List<AnnotatedElement>> annotatedElementsCache = new HashMap<>();
+    protected static Map<Class<?>, SortedMap<AnnotatedElement, PDUElement>> annotatedElementsCache = new HashMap<>();
     protected static Map<Integer, Constructor<?>> assignableConstructorCache = new HashMap<>();
+    protected static Map<Class<? extends BinaryType>, Constructor<? extends BinaryType>> binaryTypeConstructorCache = new HashMap<>();
     protected static Map<Class<?>, List<AnnotatedElement>> infoMethodsCache = new HashMap<>();
+    protected static Map<Field, Boolean> subtypeCache = new HashMap<>();
 
-    @SuppressWarnings("unchecked")
-    public static <T extends PDUSerializable> List<AnnotatedElement> resolveAnnotatedElements(Class<T> klass)
+    public static <T extends PDUSerializable> SortedMap<AnnotatedElement, PDUElement> resolveAnnotatedElements(Class<? super T> klass)
     {
         if (annotatedElementsCache.containsKey(klass))
         {
             return annotatedElementsCache.get(klass);
         }
 
-        List<AnnotatedElement> annotatedElements = new ArrayList<>();
-
-        for (Field f : klass.getDeclaredFields())
-            if (f.isAnnotationPresent(PDUElement.class))
-                annotatedElements.add(f);
-
-        for (Method m : klass.getDeclaredMethods())
-            if (m.isAnnotationPresent(PDUElement.class))
-                annotatedElements.add(m);
-
-        // sort annotated elements
-        Collections.sort(annotatedElements, new Comparator<AnnotatedElement>()
+        SortedMap<AnnotatedElement, PDUElement> annotatedElements = new TreeMap<>(new Comparator<AnnotatedElement>()
         {
             @Override
             public int compare(AnnotatedElement o1, AnnotatedElement o2)
             {
-                return o1.getAnnotation(PDUElement.class).order() - o2.getAnnotation(PDUElement.class).order();
+                Class<?> o1Class = o1 instanceof Field ? ((Field) o1).getDeclaringClass() : ((Method) o1).getDeclaringClass();
+                Class<?> o2Class = o1 instanceof Field ? ((Field) o2).getDeclaringClass() : ((Method) o2).getDeclaringClass();
+
+                boolean o1Topo2 = o1Class.isAssignableFrom(o2Class);
+                boolean o2Topo1 = o2Class.isAssignableFrom(o1Class);
+
+                if (o1Topo2 && !o2Topo1)
+                {
+                    return -1;
+                }
+                else if (!o1Topo2 && o2Topo1)
+                {
+                    return 1;
+                }
+                else
+                {
+                    return o1.getAnnotation(PDUElement.class).order() - o2.getAnnotation(PDUElement.class).order();
+                }
+
             }
         });
 
-        // collect from parent classes and prepend
-        Class<?> superKlass = klass.getSuperclass();
+        for (Field f : klass.getDeclaredFields())
+            if (f.isAnnotationPresent(PDUElement.class))
+                annotatedElements.put(f, f.getAnnotation(PDUElement.class));
+
+        for (Method m : klass.getDeclaredMethods())
+            if (m.isAnnotationPresent(PDUElement.class))
+                annotatedElements.put(m, m.getAnnotation(PDUElement.class));
+
+        // collect from parent classes
+        Class<? super T> superKlass = klass.getSuperclass();
         if (superKlass != null && PDUSerializable.class.isAssignableFrom(superKlass))
         {
-            List<AnnotatedElement> superKlassElements = resolveAnnotatedElements((Class<? extends PDUSerializable>) superKlass);
-            List<AnnotatedElement> superKlassElementsCopy = new ArrayList<>();
-            superKlassElementsCopy.addAll(superKlassElements);
-            superKlassElementsCopy.addAll(annotatedElements);
-            annotatedElements = superKlassElementsCopy;
+            annotatedElements.putAll(resolveAnnotatedElements(superKlass));
         }
 
         // System.err.println("caching klass " + klass + " " +
@@ -168,13 +181,13 @@ public class PDU
      */
     public static <T extends PDUSerializable> int[] getLengthMetadata(Class<T> pduClass)
     {
-        List<AnnotatedElement> annotatedElements = resolveAnnotatedElements(pduClass);
+        Map<AnnotatedElement, PDUElement> annotatedElements = resolveAnnotatedElements(pduClass);
 
         int[] metadata = new int[3];
         int offset = 0;
-        for (AnnotatedElement element : annotatedElements)
+        for (Entry<AnnotatedElement, PDUElement> entry : annotatedElements.entrySet())
         {
-            PDUElement pduElement = element.getAnnotation(PDUElement.class);
+            PDUElement pduElement = entry.getValue();
             if (pduElement.type() == LENGTH)
             {
                 metadata[0] = offset;
@@ -202,7 +215,7 @@ public class PDU
      */
     public static byte[] encode(PDUSerializable packetSerializable) throws PDUException
     {
-        List<AnnotatedElement> annotatedElements = resolveAnnotatedElements(packetSerializable.getClass());
+        Map<AnnotatedElement, PDUElement> annotatedElements = resolveAnnotatedElements(packetSerializable.getClass());
 
         // write data to this byte array
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -214,9 +227,10 @@ public class PDU
         Map<String, LengthFieldMetadata> lengthFieldNamesToMetadata = new HashMap<>();
 
         // traverse all annotated elements
-        for (AnnotatedElement element : annotatedElements)
+        for (Entry<AnnotatedElement, PDUElement> entry : annotatedElements.entrySet())
         {
-            PDUElement pduElement = element.getAnnotation(PDUElement.class);
+            AnnotatedElement element = entry.getKey();
+            PDUElement pduElement = entry.getValue();
             String fieldName = null;
 
             try
@@ -326,7 +340,7 @@ public class PDU
 
         return result;
     }
-    
+
     /**
      * TODO Speedup/cache
      * 
@@ -341,15 +355,18 @@ public class PDU
     protected static <T extends PDUSerializable> Class<T> resolveInstantiableClass(Class<T> klass, byte[] data, int startAtOffset)
                                                                                                                                   throws PDUException
     {
-        List<AnnotatedElement> annotatedElements = resolveAnnotatedElements(klass);
+        Map<AnnotatedElement, PDUElement> annotatedElements = resolveAnnotatedElements(klass);
 
         Field subtypeField = null;
         PDUElement subtypeElement = null;
         int subtypeOffset = 0;
         int offset = startAtOffset;
 
-        for (AnnotatedElement annotatedElement : annotatedElements)
+        for (Entry<AnnotatedElement, PDUElement> entry : annotatedElements.entrySet())
         {
+            AnnotatedElement annotatedElement = entry.getKey();
+            PDUElement pduElement = entry.getValue();
+
             if (!(annotatedElement instanceof Field))
             {
                 throw new IllegalStateException("Unsupported AnnotatedElement type of " + annotatedElement);
@@ -357,14 +374,14 @@ public class PDU
 
             Field field = (Field) annotatedElement;
 
-            if (field.getDeclaringClass() == klass && field.isAnnotationPresent(PDUSubtype.class))
+            if (field.getDeclaringClass() == klass && isSubtypePresent(field))
             {
                 subtypeField = field;
-                subtypeElement = field.getAnnotation(PDUElement.class);
+                subtypeElement = pduElement;
                 subtypeOffset = offset;
             }
 
-            int length = field.getAnnotation(PDUElement.class).length();
+            int length = pduElement.length();
             offset += length;
         }
 
@@ -388,6 +405,24 @@ public class PDU
 
         Class<T> subtypeClass = resolveSubtype(subtypeElement, subtypeField, subtypeOffset, data);
         return resolveInstantiableClass(subtypeClass, data, startAtOffset);
+    }
+
+    private static boolean isSubtypePresent(Field field)
+    {
+        boolean result = false;
+
+        if (!subtypeCache.containsKey(field))
+        {
+            result = field.isAnnotationPresent(PDUSubtype.class);
+            subtypeCache.put(field, result);
+        }
+        else
+        {
+            result= subtypeCache.get(field);
+        }
+
+        return result;
+
     }
 
     @SuppressWarnings("unchecked")
@@ -441,7 +476,7 @@ public class PDU
             // System.out.println("found instantiable class " +
             // instantiableClass.getCanonicalName() + " for class " + klass);
 
-            List<AnnotatedElement> elements = resolveAnnotatedElements(instantiableClass);
+            Map<AnnotatedElement, PDUElement> elements = resolveAnnotatedElements(instantiableClass);
 
             Constructor<T> constructor = instantiableClass.getDeclaredConstructor();
             constructor.setAccessible(true);
@@ -451,8 +486,11 @@ public class PDU
 
             int restLength = 0;
 
-            for (AnnotatedElement element : elements)
+            for (Entry<AnnotatedElement, PDUElement> entry : elements.entrySet())
             {
+                AnnotatedElement element = entry.getKey();
+                PDUElement pduElement = entry.getValue();
+
                 if (!(element instanceof Field))
                 {
                     throw new IllegalStateException("element " + element + " is not instance of Field");
@@ -464,8 +502,6 @@ public class PDU
                 {
                     field.setAccessible(true);
                 }
-
-                PDUElement pduElement = field.getAnnotation(PDUElement.class);
 
                 // System.err.println("Decoding klass " +
                 // field.getDeclaringClass().getCanonicalName() + " field " +
@@ -489,12 +525,12 @@ public class PDU
                         Map<String, Integer> lengthFieldMetadataMap = (Map<String, Integer>) pdu.getClass().getMethod(pduElement.referencesMethod())
                                                                                                 .invoke(pdu);
 
-                        for (Entry<String, Integer> entry : lengthFieldMetadataMap.entrySet())
+                        for (Entry<String, Integer> lengthFieldEntry : lengthFieldMetadataMap.entrySet())
                         {
-                            lengthFieldMetadata = new LengthFieldMetadata(entry.getKey(), offset, pduElement.length(), pduElement.args());
-                            lengthFieldMetadata.setValue(entry.getValue());
+                            lengthFieldMetadata = new LengthFieldMetadata(lengthFieldEntry.getKey(), offset, pduElement.length(), pduElement.args());
+                            lengthFieldMetadata.setValue(lengthFieldEntry.getValue());
 
-                            fieldNameToLengthFieldMetadata.put(entry.getKey(), lengthFieldMetadata);
+                            fieldNameToLengthFieldMetadata.put(lengthFieldEntry.getKey(), lengthFieldMetadata);
                         }
                     }
                     else
@@ -532,8 +568,10 @@ public class PDU
                     }
                 }
 
-//                System.out.println("klass: " + field.getDeclaringClass() + " field " + field.getName() + " offset: " + offset + " length: " + length
-//                        + " total: " + data.length);
+                // System.out.println("klass: " + field.getDeclaringClass() +
+                // " field " + field.getName() + " offset: " + offset +
+                // " length: " + length
+                // + " total: " + data.length);
 
                 // copy data into slice
 
@@ -544,8 +582,17 @@ public class PDU
                 Class<? extends BinaryType> binaryDataClass = pduElement.type().getDataClass();
 
                 // get binary value
-                BinaryType binaryValue = binaryDataClass.getConstructor(byte[].class, int.class, String[].class).newInstance(slice, length,
-                                                                                                                             pduElement.args());
+                Constructor<? extends BinaryType> binaryTypeConstructor;
+                if (!binaryTypeConstructorCache.containsKey(binaryDataClass))
+                {
+                    binaryTypeConstructor = binaryDataClass.getConstructor(byte[].class, int.class, String[].class);
+                    binaryTypeConstructorCache.put(binaryDataClass, binaryTypeConstructor);
+                }
+                else
+                {
+                    binaryTypeConstructor = binaryTypeConstructorCache.get(binaryDataClass);
+                }
+                BinaryType binaryValue = binaryTypeConstructor.newInstance(slice, length, pduElement.args());
 
                 // convert binary value to field type
                 Object fieldValue = binaryValue.to(field.getType());
@@ -557,8 +604,10 @@ public class PDU
                     length = resolveLength((PDUSerializable) fieldValue);
                 }
 
-//                System.out.println("field " + field.getName() + " set to " + field.get(pdu) + " at offset " + offset + " read length: " + length
-//                        + " slice: " + DatatypeConverter.printHexBinary(slice));
+                // System.out.println("field " + field.getName() + " set to " +
+                // field.get(pdu) + " at offset " + offset + " read length: " +
+                // length
+                // + " slice: " + DatatypeConverter.printHexBinary(slice));
 
                 // ignore n bytes padding
                 int padding = pduElement.pad();
@@ -567,11 +616,10 @@ public class PDU
                     length += resolvePaddingLength(padding, length);
                 }
 
-
                 restLength -= length;
                 offset += length;
 
-//                System.out.println("restLength: " + restLength + "\n");
+                // System.out.println("restLength: " + restLength + "\n");
             }
 
             return pdu;
@@ -611,9 +659,11 @@ public class PDU
         try
         {
             // variable size serializable
-            for (AnnotatedElement element : PDU.resolveAnnotatedElements(serializable.getClass()))
+
+            for (Entry<AnnotatedElement, PDUElement> entry : PDU.resolveAnnotatedElements(serializable.getClass()).entrySet())
             {
-                PDUElement pduElement = element.getAnnotation(PDUElement.class);
+                AnnotatedElement element = entry.getKey();
+                PDUElement pduElement = entry.getValue();
 
                 if (pduElement.type() == LENGTH && pduElement.references().equals(PDUElement.Type.LENGTH_REFERENCE_PDU_ALL))
                 {
@@ -690,10 +740,10 @@ public class PDU
 
         indent += 2;
 
-        List<AnnotatedElement> annotatedElements = PDU.resolveAnnotatedElements(packetSerializable.getClass());
+        Map<AnnotatedElement, PDUElement> annotatedElements = PDU.resolveAnnotatedElements(packetSerializable.getClass());
         List<AnnotatedElement> derivatedElements = PDU.resolveInfoMethods(packetSerializable.getClass());
         List<AnnotatedElement> dumpElements = new ArrayList<>();
-        dumpElements.addAll(annotatedElements);
+        dumpElements.addAll(annotatedElements.keySet());
         dumpElements.addAll(derivatedElements);
 
         for (AnnotatedElement dumpElement : dumpElements)
