@@ -32,7 +32,8 @@ public class PDU
     protected static Map<Class<?>, List<AnnotatedElement>> infoMethodsCache = new HashMap<>();
     protected static Map<Field, Boolean> subtypeCache = new HashMap<>();
 
-    public static <T extends PDUSerializable> SortedMap<AnnotatedElement, PDUElement> resolveAnnotatedElements(Class<? super T> klass)
+    @SuppressWarnings("unchecked")
+    public static SortedMap<AnnotatedElement, PDUElement> resolveAnnotatedElements(Class<? extends PDUSerializable> klass)
     {
         if (annotatedElementsCache.containsKey(klass))
         {
@@ -75,10 +76,10 @@ public class PDU
                 annotatedElements.put(m, m.getAnnotation(PDUElement.class));
 
         // collect from parent classes
-        Class<? super T> superKlass = klass.getSuperclass();
+        Class<?> superKlass = klass.getSuperclass();
         if (superKlass != null && PDUSerializable.class.isAssignableFrom(superKlass))
         {
-            annotatedElements.putAll(resolveAnnotatedElements(superKlass));
+            annotatedElements.putAll(resolveAnnotatedElements((Class<? extends PDUSerializable>) superKlass));
         }
 
         // System.err.println("caching klass " + klass + " " +
