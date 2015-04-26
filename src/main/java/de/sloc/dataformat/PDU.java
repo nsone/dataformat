@@ -418,7 +418,7 @@ public class PDU
         }
         else
         {
-            result= subtypeCache.get(field);
+            result = subtypeCache.get(field);
         }
 
         return result;
