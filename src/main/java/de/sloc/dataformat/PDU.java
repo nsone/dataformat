@@ -650,6 +650,7 @@ public class PDU
         }
     }
 
+    @SuppressWarnings("unchecked")
     protected static int resolveLength(PDUSerializable serializable) throws PDUException
     {
         int countLength = 0;
