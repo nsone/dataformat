@@ -4,10 +4,9 @@ import de.sloc.dataformat.PDUElement;
 import de.sloc.dataformat.PDUElement.Type;
 import de.sloc.dataformat.PDUSubtype;
 
-public class IPv4 extends FrameHeader
-{
+public class IPv4 extends FrameHeader {
 	@PDUElement(order = 1, type = Type.RAW, length = 2)
-	protected byte[] notInterested;
+	protected byte[] intro;
 
 	@PDUElement(order = 2, type = Type.LENGTH, length = 2)
 	protected int length;
@@ -16,7 +15,7 @@ public class IPv4 extends FrameHeader
 	protected byte[] notInterested2;
 
 	@PDUElement(order = 8, type = Type.UNSIGNED_INTEGER, length = 1)
-	protected short ttl;
+	protected int ttl;
 
 	@PDUElement(order = 9, type = Type.UNSIGNED_INTEGER, length = 1)
 	@PDUSubtype
@@ -31,32 +30,26 @@ public class IPv4 extends FrameHeader
 	@PDUElement(order = 12, type = Type.UNSIGNED_INTEGER, length = 4)
 	protected MyInetAddress destinationIPAddress;
 
-	protected IPv4()
-	{
+	protected IPv4() {
 	}
 
-	public short getTtl()
-	{
+	public int getTtl() {
 		return ttl;
 	}
 
-	public IPProtocol getProtocol()
-	{
+	public IPProtocol getProtocol() {
 		return protocol;
 	}
 
-	public int getChecksum()
-	{
+	public int getChecksum() {
 		return checksum;
 	}
 
-	public MyInetAddress getSourceIPAddress()
-	{
+	public MyInetAddress getSourceIPAddress() {
 		return sourceIPAddress;
 	}
 
-	public MyInetAddress getDestinationIPAddress()
-	{
+	public MyInetAddress getDestinationIPAddress() {
 		return destinationIPAddress;
 	}
 
