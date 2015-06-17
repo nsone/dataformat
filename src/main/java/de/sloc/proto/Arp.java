@@ -28,13 +28,13 @@ public class Arp extends FrameHeader
 	protected byte[] sourceMac;
 
 	@PDUElement(order = 7, type = Type.UNSIGNED_INTEGER)
-	protected MyInetAddress nlSourceAddress;
+	protected ConvertableInetAddress nlSourceAddress;
 
 	@PDUElement(order = 8, type = Type.RAW)
 	protected byte[] destinationMac;
 
 	@PDUElement(order = 9, type = Type.UNSIGNED_INTEGER)
-	protected MyInetAddress nlDestinationAddress;
+	protected ConvertableInetAddress nlDestinationAddress;
 
 	protected Arp()
 	{
@@ -49,9 +49,9 @@ public class Arp extends FrameHeader
 		this.protocolType = protocolType;
 		this.operation = operation;
 		this.sourceMac = sourceMac;
-		this.nlSourceAddress = new MyInetAddress(nlSourceAddress);
+		this.nlSourceAddress = new ConvertableInetAddress(nlSourceAddress);
 		this.destinationMac = destinationMac;
-		this.nlDestinationAddress = new MyInetAddress(nlDestinationAddress);
+		this.nlDestinationAddress = new ConvertableInetAddress(nlDestinationAddress);
 	}
 
 	public ArpAddressType getAddressType()
@@ -84,12 +84,12 @@ public class Arp extends FrameHeader
 		return sourceMac;
 	}
 
-	public MyInetAddress getNlSourceAddress()
+	public ConvertableInetAddress getNlSourceAddress()
 	{
 		return nlSourceAddress;
 	}
 
-	public MyInetAddress getNlDestinationAddress()
+	public ConvertableInetAddress getNlDestinationAddress()
 	{
 		return nlDestinationAddress;
 	}

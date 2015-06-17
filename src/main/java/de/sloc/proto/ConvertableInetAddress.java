@@ -7,16 +7,16 @@ import java.net.UnknownHostException;
 import de.sloc.dataformat.AsNumber;
 import de.sloc.dataformat.UnsignedInteger;
 
-public class MyInetAddress implements AsNumber
+public class ConvertableInetAddress implements AsNumber
 {
 	protected InetAddress inetAddress;
 
-	public MyInetAddress(InetAddress inetAddress)
+	public ConvertableInetAddress(InetAddress inetAddress)
 	{
 		this.inetAddress = inetAddress;
 	}
 
-	protected MyInetAddress()
+	protected ConvertableInetAddress()
 	{
 
 	}
@@ -28,9 +28,9 @@ public class MyInetAddress implements AsNumber
 		return new BigInteger(addressBytes);
 	}
 
-	public static MyInetAddress getByValue(Number value) throws UnknownHostException
+	public static ConvertableInetAddress getByValue(Number value) throws UnknownHostException
 	{
-		return new MyInetAddress(InetAddress.getByAddress(new UnsignedInteger(value, 4 /*
+		return new ConvertableInetAddress(InetAddress.getByAddress(new UnsignedInteger(value, 4 /*
 																						 * TODO
 																						 * determine
 																						 * protocol
