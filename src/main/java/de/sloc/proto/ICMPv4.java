@@ -22,7 +22,7 @@ public class ICMPv4 extends IPv4 {
 		super();
 	}
 
-	public ICMPv4(ConvertableInetAddress src, ConvertableInetAddress dst, byte[] sourceMac, byte[] targetMac) {
+	public ICMPv4(ConvertibleInetAddress src, ConvertibleInetAddress dst, byte[] sourceMac, byte[] targetMac) {
 		super();
 		// IPv4
 		intro = new byte[] { 0x45, 0x00 };

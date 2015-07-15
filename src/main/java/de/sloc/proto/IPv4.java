@@ -25,10 +25,10 @@ public class IPv4 extends FrameHeader {
 	protected int checksum;
 
 	@PDUElement(order = 11, type = Type.UNSIGNED_INTEGER, length = 4)
-	protected ConvertableInetAddress sourceIPAddress;
+	protected ConvertibleInetAddress sourceIPAddress;
 
 	@PDUElement(order = 12, type = Type.UNSIGNED_INTEGER, length = 4)
-	protected ConvertableInetAddress destinationIPAddress;
+	protected ConvertibleInetAddress destinationIPAddress;
 
 	protected IPv4() {
 	}
@@ -45,11 +45,11 @@ public class IPv4 extends FrameHeader {
 		return checksum;
 	}
 
-	public ConvertableInetAddress getSourceIPAddress() {
+	public ConvertibleInetAddress getSourceIPAddress() {
 		return sourceIPAddress;
 	}
 
-	public ConvertableInetAddress getDestinationIPAddress() {
+	public ConvertibleInetAddress getDestinationIPAddress() {
 		return destinationIPAddress;
 	}
 
