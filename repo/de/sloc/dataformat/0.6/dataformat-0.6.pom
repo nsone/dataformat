@@ -23,15 +23,6 @@
 				</configuration>
 			</plugin>
 		</plugins>
-
-
-		<extensions>
-			<extension>
-				<groupId>org.springframework.build</groupId>
-				<artifactId>aws-maven</artifactId>
-				<version>5.0.0.RELEASE</version>
-			</extension>
-		</extensions>
 	</build>
 
 	<dependencies>
@@ -43,12 +34,10 @@
 		</dependency>
 	</dependencies>
 
-
 	<distributionManagement>
 		<repository>
-			<id>maven-datapath-repo</id>
-			<name>DATAPATH MVN Repository</name>
-			<url>s3://maven-repository.datapath.io/</url>
+			<id>github</id>
+			<url>file:repo</url>
 		</repository>
 	</distributionManagement>
 
