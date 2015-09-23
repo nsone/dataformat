@@ -1,6 +1,8 @@
 package de.sloc.dataformat;
 
-public interface AsNumber
+import java.io.Serializable;
+
+public interface AsNumber extends Serializable
 {
 	public Number getNumberValue();
 

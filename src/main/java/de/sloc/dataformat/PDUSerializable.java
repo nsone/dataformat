@@ -1,6 +1,8 @@
 package de.sloc.dataformat;
 
-public interface PDUSerializable
+import java.io.Serializable;
+
+public interface PDUSerializable extends Serializable
 {
 
 }
