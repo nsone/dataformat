@@ -233,7 +233,7 @@ public class PDU
         {
             if (canBeFixedSize)
             {
-                metadata = new int[1];
+                metadata = new int[] { lengthCount };
             }
             else
             {
