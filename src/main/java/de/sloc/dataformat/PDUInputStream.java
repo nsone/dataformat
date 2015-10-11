@@ -1,20 +1,23 @@
 package de.sloc.dataformat;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class PDUInputStream<T extends PDUSerializable> extends InputStream
 {
-    private final int MAX_SIZE = 163840;
+    private final int MAX_SIZE = 10000000;
 
     protected Class<T> pduClass;
-    protected BufferedInputStream inputStream;
+    protected InputStream inputStream;
     protected byte[] readBuffer = new byte[MAX_SIZE];
 
     boolean isFixedLength = false;
@@ -25,12 +28,12 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
 
     protected int fixedLength;
 
-    protected ExecutorService es = Executors.newFixedThreadPool(3);
+    protected ExecutorService es = Executors.newFixedThreadPool(8);
 
     public PDUInputStream(Class<T> pduClass, InputStream inputStream)
     {
         this.pduClass = pduClass;
-        this.inputStream = new BufferedInputStream(inputStream);
+        this.inputStream = inputStream;
 
         int[] metadata = PDU.getLengthMetadata(pduClass);
 
@@ -58,9 +61,67 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
         return this.inputStream.read();
     }
 
+    public void close() throws IOException
+    {
+        es.shutdown();
+        super.close();
+    }
+
     public int waitForBytes(int offset) throws IOException
     {
         return inputStream.read(readBuffer, offset, MAX_SIZE - offset);
+    }
+
+    private boolean enoughBytesForLengthField(int offset, int bytesReady)
+    {
+        return bytesReady > offset + lengthOffset + lengthFieldLength;
+    }
+
+    private boolean enoughBytesForPDU(int offset, long pduLength, int bytesReady)
+    {
+        return bytesReady >= offset + pduLength;
+    }
+
+    private int parsePDULength()
+    {
+        byte[] lengthArray = new byte[lengthFieldLength];
+        System.arraycopy(readBuffer, lengthOffset, lengthArray, 0, lengthFieldLength);
+        return new Length(lengthArray, lengthFieldLength, new String[0]).toInt() + this.delta;
+    }
+
+    private Future<T> createPDUTask(int offset, int pduLength) throws PDUException
+    {
+        byte[] pduBytes = new byte[pduLength];
+        System.arraycopy(readBuffer, offset, pduBytes, 0, pduLength);
+        FutureTask<T> futureTask = new FutureTask<>(() -> PDU.decode(pduBytes, pduClass, 0));
+        es.submit(futureTask);
+        return futureTask;
+    }
+
+    private boolean bufferOverlapsLengthField(int offset)
+    {
+        boolean result = offset + lengthOffset + lengthFieldLength > MAX_SIZE;
+        // if (result)
+        // System.out.println("buffer overlaps length field");
+        return result;
+    }
+
+    private boolean bufferOverlapsPDU(int offset, int pduLength)
+    {
+        boolean result = offset + pduLength > MAX_SIZE;
+        // if (result)
+        // System.out.println("buffer overlaps pdu");
+        return result;
+    }
+
+    private int moveRestBytes(int offset)
+    {
+        int restBytes = MAX_SIZE - offset;
+        byte[] newReadBuffer = new byte[MAX_SIZE];
+        System.arraycopy(readBuffer, offset, newReadBuffer, 0, restBytes);
+        this.readBuffer = newReadBuffer;
+
+        return restBytes;
     }
 
     public T readPDU() throws IOException
@@ -76,62 +137,97 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
         }
     }
 
-    public void close() throws IOException
-    {
-        es.shutdown();
-        super.close();
-    }
+    private Queue<Future<T>> pduQueue = new LinkedBlockingQueue<>();
 
     public Future<T> nextPDU() throws IOException
     {
-        int bytesRead = 0;
-        inputStream.mark(MAX_SIZE);
-        long pduLength = 0;
-
-        for (;;)
+        if (pduQueue.isEmpty())
         {
-            bytesRead += waitForBytes(bytesRead);
-            // System.out.println("got " + bytesRead + " bytes");
-
-            if (bytesRead < 0)
-                break;
-
-            if (isFixedLength)
+            List<Future<T>> pdus = nextPDUs();
+            if (pdus == null)
             {
-                pduLength = fixedLength;
-            }
-            else if (bytesRead > (lengthOffset + lengthFieldLength) && pduLength == 0)
-            {
-                byte[] lengthArray = new byte[lengthFieldLength];
-                System.arraycopy(readBuffer, lengthOffset, lengthArray, 0, lengthFieldLength);
-                pduLength = new Length(lengthArray, lengthFieldLength, new String[0]).toLong() + this.delta;
+                return null;
             }
 
-            if (pduLength > 0 && bytesRead >= pduLength)
-            {
-                byte[] message = new byte[(int) pduLength];
-                System.arraycopy(readBuffer, 0, message, 0, (int) pduLength);
+            pduQueue.addAll(pdus);
+        }
 
-                if (bytesRead > pduLength)
+        return pduQueue.poll();
+    }
+
+    protected int bytesReady = 0, offset = 0;
+
+    protected List<Future<T>> nextPDUs() throws IOException
+    {
+        int pduLength = fixedLength;
+
+        List<Future<T>> pdus = new ArrayList<>();
+
+        outer:
+        do
+        {
+            if (!isFixedLength)
+            {
+                if (bufferOverlapsLengthField(offset))
                 {
-                    // cut off first message
-                    // go back to the beginning
-                    inputStream.reset();
-
-                    // reread first message
-                    inputStream.read(readBuffer, 0, (int) pduLength);
-
-                    // mark after first message
-                    inputStream.mark(MAX_SIZE);
+                    bytesReady = moveRestBytes(offset);
+                    offset = 0;
+                    break outer;
                 }
 
-                FutureTask<T> task = new FutureTask<T>(() -> PDU.decode(message, pduClass, 0));
-                es.submit(task);
-                return task;
+                while (!enoughBytesForLengthField(offset, bytesReady))
+                {
+                    int newBytesReady = waitForBytes(bytesReady);
+                    if (newBytesReady == -1)
+                    {
+                        break outer;
+                    }
+                    bytesReady += newBytesReady;
+                }
+
+                // got enough bytes for length field
+                pduLength = parsePDULength();
             }
 
+            if (bufferOverlapsPDU(offset, pduLength))
+            {
+                bytesReady = moveRestBytes(offset);
+                offset = 0;
+                break outer;
+            }
+
+            while (!enoughBytesForPDU(offset, pduLength, bytesReady))
+            {
+                int newBytesReady = waitForBytes(bytesReady);
+                if (newBytesReady == -1)
+                {
+                    break outer;
+                }
+                bytesReady += newBytesReady;
+            }
+            // got enough bytes for PDU
+            pdus.add(createPDUTask(offset, pduLength));
+
+            offset += pduLength;
+
         }
-        return null;
+        // there are more PDUs
+        while (bytesReady > offset);
+
+        if ((!isFixedLength && bufferOverlapsLengthField(offset)) || bufferOverlapsPDU(offset, pduLength))
+        {
+            bytesReady = moveRestBytes(offset);
+            offset = 0;
+        }
+
+        if (pdus.size() == 0)
+        {
+            return null;
+        }
+        else
+        {
+            return pdus;
+        }
     }
 
 }
