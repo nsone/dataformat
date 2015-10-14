@@ -1,5 +1,6 @@
 package de.sloc.dataformat;
 
+
 public class FixedLengthString implements BinaryType
 {
 	protected byte[] data;
@@ -7,6 +8,7 @@ public class FixedLengthString implements BinaryType
 	public FixedLengthString(byte[] data, int length, String[] args)
 	{
 		this.data = data;
+		
 	}
 
 	public FixedLengthString(String string, int length, String[] args)

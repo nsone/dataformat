@@ -82,17 +82,22 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
         return bytesReady >= offset + pduLength;
     }
 
-    private int parsePDULength()
+    private long parsePDULength()
     {
         byte[] lengthArray = new byte[lengthFieldLength];
         System.arraycopy(readBuffer, lengthOffset, lengthArray, 0, lengthFieldLength);
-        return new Length(lengthArray, lengthFieldLength, new String[0]).toInt() + this.delta;
+        return new Length(lengthArray, lengthFieldLength, new String[0]).toLong() + this.delta;
     }
 
-    private Future<T> createPDUTask(int offset, int pduLength) throws PDUException
+    private Future<T> createPDUTask(int offset, long pduLength) throws PDUException
     {
-        byte[] pduBytes = new byte[pduLength];
-        System.arraycopy(readBuffer, offset, pduBytes, 0, pduLength);
+        if(pduLength > Integer.MAX_VALUE)
+        {
+            throw new IllegalStateException("Cannot save PDU larger then 2^31");
+        }
+        int pduLengthInt = (int) pduLength;
+        byte[] pduBytes = new byte[pduLengthInt];
+        System.arraycopy(readBuffer, offset, pduBytes, 0, pduLengthInt);
         FutureTask<T> futureTask = new FutureTask<>(() -> PDU.decode(pduBytes, pduClass, 0));
         es.submit(futureTask);
         return futureTask;
@@ -106,7 +111,7 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
         return result;
     }
 
-    private boolean bufferOverlapsPDU(int offset, int pduLength)
+    private boolean bufferOverlapsPDU(int offset, long pduLength)
     {
         boolean result = offset + pduLength > MAX_SIZE;
         // if (result)
@@ -159,7 +164,7 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
 
     protected List<Future<T>> nextPDUs() throws IOException
     {
-        int pduLength = fixedLength;
+        long pduLength = fixedLength;
 
         List<Future<T>> pdus = new ArrayList<>();
 
