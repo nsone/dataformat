@@ -14,7 +14,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class PDUInputStream<T extends PDUSerializable> extends InputStream
 {
-    private final int MAX_SIZE = 10000000;
+    private final int MAX_SIZE = 100000000;
 
     protected Class<T> pduClass;
     protected InputStream inputStream;
@@ -29,6 +29,7 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
     protected int fixedLength;
 
     protected ExecutorService es = Executors.newFixedThreadPool(8);
+//    protected ExecutorService es = Executors.newSingleThreadExecutor();
 
     public PDUInputStream(Class<T> pduClass, InputStream inputStream)
     {
@@ -82,11 +83,13 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
         return bytesReady >= offset + pduLength;
     }
 
-    private long parsePDULength()
+    private long parsePDULength(int offset)
     {
         byte[] lengthArray = new byte[lengthFieldLength];
-        System.arraycopy(readBuffer, lengthOffset, lengthArray, 0, lengthFieldLength);
-        return new Length(lengthArray, lengthFieldLength, new String[0]).toLong() + this.delta;
+        System.arraycopy(readBuffer, offset + lengthOffset, lengthArray, 0, lengthFieldLength);
+        long length = new Length(lengthArray, lengthFieldLength, new String[0]).toLong() + this.delta;
+//        System.out.println("parsePDULength: " + length);
+        return length;
     }
 
     private Future<T> createPDUTask(int offset, long pduLength) throws PDUException
@@ -97,6 +100,7 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
         }
         int pduLengthInt = (int) pduLength;
         byte[] pduBytes = new byte[pduLengthInt];
+//        System.out.println("created pdu prase task offset " + offset + " size " + pduLengthInt);
         System.arraycopy(readBuffer, offset, pduBytes, 0, pduLengthInt);
         FutureTask<T> futureTask = new FutureTask<>(() -> PDU.decode(pduBytes, pduClass, 0));
         es.submit(futureTask);
@@ -106,21 +110,22 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
     private boolean bufferOverlapsLengthField(int offset)
     {
         boolean result = offset + lengthOffset + lengthFieldLength > MAX_SIZE;
-        // if (result)
-        // System.out.println("buffer overlaps length field");
+//         if (result)
+//         System.out.println("buffer overlaps length field");
         return result;
     }
 
     private boolean bufferOverlapsPDU(int offset, long pduLength)
     {
         boolean result = offset + pduLength > MAX_SIZE;
-        // if (result)
-        // System.out.println("buffer overlaps pdu");
+//        if (result)
+//            System.out.println("buffer overlaps pdu");
         return result;
     }
 
     private int moveRestBytes(int offset)
     {
+//        System.out.println("moveRestBytes at offset " + offset);
         int restBytes = MAX_SIZE - offset;
         byte[] newReadBuffer = new byte[MAX_SIZE];
         System.arraycopy(readBuffer, offset, newReadBuffer, 0, restBytes);
@@ -182,7 +187,9 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
 
                 while (!enoughBytesForLengthField(offset, bytesReady))
                 {
+//                    System.out.println("not enought bytes for length field: " + bytesReady);
                     int newBytesReady = waitForBytes(bytesReady);
+//                    System.out.println("Got new bytes: " + newBytesReady);
                     if (newBytesReady == -1)
                     {
                         break outer;
@@ -191,7 +198,7 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
                 }
 
                 // got enough bytes for length field
-                pduLength = parsePDULength();
+                pduLength = parsePDULength(offset);
             }
 
             if (bufferOverlapsPDU(offset, pduLength))
@@ -203,7 +210,9 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
 
             while (!enoughBytesForPDU(offset, pduLength, bytesReady))
             {
+//                System.out.println("not enought bytes for pdu: " + bytesReady);
                 int newBytesReady = waitForBytes(bytesReady);
+//                System.out.println("Got new bytes: " + newBytesReady);
                 if (newBytesReady == -1)
                 {
                     break outer;
