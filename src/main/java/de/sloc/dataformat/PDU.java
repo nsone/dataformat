@@ -26,6 +26,9 @@ import javax.xml.bind.DatatypeConverter;
 
 public class PDU
 {
+    public static final byte[] NEWLINE = "\n".getBytes();
+
+    
     protected static Map<Class<?>, SortedMap<AnnotatedElement, PDUElement>> annotatedElementsCache = new HashMap<>();
     protected static Map<Integer, Constructor<?>> assignableConstructorCache = new HashMap<>();
     protected static Map<Class<? extends BinaryType>, Constructor<? extends BinaryType>> binaryTypeConstructorCache = new HashMap<>();
