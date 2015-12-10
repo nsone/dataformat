@@ -28,19 +28,18 @@ public class PDU
 {
     public static final byte[] NEWLINE = "\n".getBytes();
 
-    
-    protected static Map<Class<?>, SortedMap<AnnotatedElement, PDUElement>> annotatedElementsCache = new HashMap<>();
-    protected static Map<Integer, Constructor<?>> assignableConstructorCache = new HashMap<>();
-    protected static Map<Class<? extends BinaryType>, Constructor<? extends BinaryType>> binaryTypeConstructorCache = new HashMap<>();
-    protected static Map<Class<?>, List<AnnotatedElement>> infoMethodsCache = new HashMap<>();
-    protected static Map<Field, Boolean> subtypeCache = new HashMap<>();
+    private final static Map<Class<?>, SortedMap<AnnotatedElement, PDUElement>> ANNOTATED_ELEMENTS_CACHE = new HashMap<>();
+    private final static Map<Integer, Constructor<?>> ASSIGNABLE_CONSTRUCTOR_CACHE = new HashMap<>();
+    private final static Map<Class<? extends BinaryType>, Constructor<? extends BinaryType>> BINARY_TYPE_CONSTRUCTOR_CACHE = new HashMap<>();
+    private final static Map<Class<?>, List<AnnotatedElement>> INFO_METHODS_CACHE = new HashMap<>();
+    private final static Map<Field, Boolean> SUBTYPE_CACHE = new HashMap<>();
 
     @SuppressWarnings("unchecked")
     public static SortedMap<AnnotatedElement, PDUElement> resolveAnnotatedElements(Class<? extends PDUSerializable> klass)
     {
-        if (annotatedElementsCache.containsKey(klass))
+        if (ANNOTATED_ELEMENTS_CACHE.containsKey(klass))
         {
-            return annotatedElementsCache.get(klass);
+            return ANNOTATED_ELEMENTS_CACHE.get(klass);
         }
 
         SortedMap<AnnotatedElement, PDUElement> annotatedElements = new TreeMap<>(new Comparator<AnnotatedElement>()
@@ -95,7 +94,7 @@ public class PDU
 
         // System.err.println("caching klass " + klass + " " +
         // annotatedElements);
-        annotatedElementsCache.put(klass, annotatedElements);
+        ANNOTATED_ELEMENTS_CACHE.put(klass, annotatedElements);
 
         return annotatedElements;
     }
@@ -109,9 +108,9 @@ public class PDU
     @SuppressWarnings("unchecked")
     public static <T extends PDUSerializable> List<AnnotatedElement> resolveInfoMethods(Class<T> klass)
     {
-        if (infoMethodsCache.containsKey(klass))
+        if (INFO_METHODS_CACHE.containsKey(klass))
         {
-            return infoMethodsCache.get(klass);
+            return INFO_METHODS_CACHE.get(klass);
         }
 
         List<AnnotatedElement> derivativeElements = new ArrayList<>();
@@ -137,7 +136,7 @@ public class PDU
 
         // System.err.println("caching klass " + klass + " " +
         // annotatedElements);
-        infoMethodsCache.put(klass, derivativeElements);
+        INFO_METHODS_CACHE.put(klass, derivativeElements);
 
         return derivativeElements;
     }
@@ -148,9 +147,9 @@ public class PDU
                                                                                                                          SecurityException
     {
         int hashKey = klass.hashCode() + valueClass.hashCode();
-        if (assignableConstructorCache.containsKey(hashKey))
+        if (ASSIGNABLE_CONSTRUCTOR_CACHE.containsKey(hashKey))
         {
-            return (Constructor<T>) assignableConstructorCache.get(hashKey);
+            return (Constructor<T>) ASSIGNABLE_CONSTRUCTOR_CACHE.get(hashKey);
         }
 
         Constructor<T> result = null;
@@ -183,7 +182,7 @@ public class PDU
                     + valueClass.getCanonicalName());
         }
 
-        assignableConstructorCache.put(hashKey, result);
+        ASSIGNABLE_CONSTRUCTOR_CACHE.put(hashKey, result);
 
         return result;
     }
@@ -459,14 +458,14 @@ public class PDU
     {
         boolean result = false;
 
-        if (!subtypeCache.containsKey(field))
+        if (!SUBTYPE_CACHE.containsKey(field))
         {
             result = field.isAnnotationPresent(PDUSubtype.class);
-            subtypeCache.put(field, result);
+            SUBTYPE_CACHE.put(field, result);
         }
         else
         {
-            result = subtypeCache.get(field);
+            result = SUBTYPE_CACHE.get(field);
         }
 
         return result;
@@ -551,10 +550,10 @@ public class PDU
                     field.setAccessible(true);
                 }
 
-//                 System.err.println("Decoding klass " +
-//                 field.getDeclaringClass().getCanonicalName() + " field " +
-//                 field.getName() + " from "
-//                 + pduElement);
+                // System.err.println("Decoding klass " +
+                // field.getDeclaringClass().getCanonicalName() + " field " +
+                // field.getName() + " from "
+                // + pduElement);
 
                 // save length annotation
                 if (pduElement.type() == LENGTH)
@@ -616,8 +615,10 @@ public class PDU
                     }
                 }
 
-//                System.out.println("klass: " + field.getDeclaringClass() + " field " + field.getName() + " offset: " + offset + " length: " + length
-//                        + " total: " + data.length);
+                // System.out.println("klass: " + field.getDeclaringClass() +
+                // " field " + field.getName() + " offset: " + offset +
+                // " length: " + length
+                // + " total: " + data.length);
 
                 // copy data into slice
 
@@ -629,14 +630,14 @@ public class PDU
 
                 // get binary value
                 Constructor<? extends BinaryType> binaryTypeConstructor;
-                if (!binaryTypeConstructorCache.containsKey(binaryDataClass))
+                if (!BINARY_TYPE_CONSTRUCTOR_CACHE.containsKey(binaryDataClass))
                 {
                     binaryTypeConstructor = binaryDataClass.getConstructor(byte[].class, int.class, String[].class);
-                    binaryTypeConstructorCache.put(binaryDataClass, binaryTypeConstructor);
+                    BINARY_TYPE_CONSTRUCTOR_CACHE.put(binaryDataClass, binaryTypeConstructor);
                 }
                 else
                 {
-                    binaryTypeConstructor = binaryTypeConstructorCache.get(binaryDataClass);
+                    binaryTypeConstructor = BINARY_TYPE_CONSTRUCTOR_CACHE.get(binaryDataClass);
                 }
                 BinaryType binaryValue = binaryTypeConstructor.newInstance(slice, length, pduElement.args());
 
@@ -650,8 +651,10 @@ public class PDU
                     length = resolveLength((PDUSerializable) fieldValue);
                 }
 
-//                System.out.println("field " + field.getName() + " set to " + field.get(pdu) + " at offset " + offset + " read length: " + length
-//                        + " slice: " + DatatypeConverter.printHexBinary(slice));
+                // System.out.println("field " + field.getName() + " set to " +
+                // field.get(pdu) + " at offset " + offset + " read length: " +
+                // length
+                // + " slice: " + DatatypeConverter.printHexBinary(slice));
 
                 // ignore n bytes padding
                 int padding = pduElement.pad();
