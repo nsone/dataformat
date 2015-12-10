@@ -551,10 +551,10 @@ public class PDU
                     field.setAccessible(true);
                 }
 
-                // System.err.println("Decoding klass " +
-                // field.getDeclaringClass().getCanonicalName() + " field " +
-                // field.getName() + " from "
-                // + pduElement);
+//                 System.err.println("Decoding klass " +
+//                 field.getDeclaringClass().getCanonicalName() + " field " +
+//                 field.getName() + " from "
+//                 + pduElement);
 
                 // save length annotation
                 if (pduElement.type() == LENGTH)
@@ -616,10 +616,8 @@ public class PDU
                     }
                 }
 
-                // System.out.println("klass: " + field.getDeclaringClass() +
-                // " field " + field.getName() + " offset: " + offset +
-                // " length: " + length
-                // + " total: " + data.length);
+//                System.out.println("klass: " + field.getDeclaringClass() + " field " + field.getName() + " offset: " + offset + " length: " + length
+//                        + " total: " + data.length);
 
                 // copy data into slice
 
@@ -652,10 +650,8 @@ public class PDU
                     length = resolveLength((PDUSerializable) fieldValue);
                 }
 
-                // System.out.println("field " + field.getName() + " set to " +
-                // field.get(pdu) + " at offset " + offset + " read length: " +
-                // length
-                // + " slice: " + DatatypeConverter.printHexBinary(slice));
+//                System.out.println("field " + field.getName() + " set to " + field.get(pdu) + " at offset " + offset + " read length: " + length
+//                        + " slice: " + DatatypeConverter.printHexBinary(slice));
 
                 // ignore n bytes padding
                 int padding = pduElement.pad();

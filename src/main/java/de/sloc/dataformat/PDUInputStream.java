@@ -33,6 +33,11 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
 
     // protected ExecutorService es = Executors.newSingleThreadExecutor();
 
+    public PDUInputStream(Class<T> pduClass, InputStream inputStream)
+    {
+        this(pduClass, inputStream, false);
+    }
+
     public PDUInputStream(Class<T> pduClass, InputStream inputStream, boolean newline)
     {
         this.pduClass = pduClass;
@@ -57,7 +62,7 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
             throw new IllegalStateException("Unknown length metadata found");
         }
     }
-    
+
     @Override
     public int read() throws IOException
     {
@@ -80,7 +85,6 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
         return result;
 
     }
-
 
     private boolean enoughBytesForLengthField(int offset, int bytesReady)
     {
@@ -209,6 +213,11 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
 
                 // got enough bytes for length field
                 pduLength = parsePDULength(offset);
+
+                if (pduLength <= 0)
+                {
+                    throw new IllegalStateException("Read zero or negative pdu length");
+                }
             }
 
             if (bufferOverlapsPDU(offset, pduLength))
