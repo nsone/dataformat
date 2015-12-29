@@ -468,11 +468,11 @@ public class PDU
         }
         else
         {
-            if(SUBTYPE_CACHE == null)
+            if (SUBTYPE_CACHE == null)
             {
                 crunchifyGenerateThreadDump();
             }
-            
+
             result = SUBTYPE_CACHE.get(field);
         }
 
@@ -758,7 +758,24 @@ public class PDU
                             fieldElement.setAccessible(true);
                         }
 
-                        int result = fieldElement.getInt(serializable);
+                        int result = 0;
+                        if (fieldElement.getType().equals(long.class))
+                        {
+                            long longResult = fieldElement.getLong(serializable);
+                            if (longResult > Integer.MAX_VALUE)
+                            {
+                                throw new IllegalArgumentException("Cannot have length longer than " + Integer.MAX_VALUE);
+                            }
+                            result = (int) longResult;
+                        }
+                        else if (fieldElement.getType().equals(int.class))
+                        {
+                            result = fieldElement.getInt(serializable);
+                        }
+                        else
+                        {
+                            throw new IllegalArgumentException("That cannot have a length " + fieldElement.getType());
+                        }
                         return result;
                     }
                     else
