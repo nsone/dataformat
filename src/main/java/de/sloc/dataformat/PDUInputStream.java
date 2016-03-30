@@ -72,6 +72,7 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
     public void close() throws IOException
     {
         es.shutdown();
+        inputStream.close();
         super.close();
     }
 
