@@ -118,7 +118,6 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
             offset = 0;
 
             bytesReady += waitForBytes();
-            System.out.println("got " + bytesReady + " bytes");
 
             if (bytesReady < 0)
                 return null;
@@ -135,7 +134,6 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
                 }
                 else
                 {
-//                    inputStream.reset();
                     continue loop;
                 }
                 
@@ -146,7 +144,6 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
                 }
                 else
                 {
-//                    inputStream.reset();
                     continue loop; 
                 }
 
