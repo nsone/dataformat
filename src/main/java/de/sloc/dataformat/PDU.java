@@ -772,6 +772,10 @@ public class PDU
                         {
                             result = fieldElement.getInt(serializable);
                         }
+                        else if(fieldElement.getType().equals(short.class))
+                        {
+                            result = fieldElement.getShort(serializable);
+                        }
                         else
                         {
                             throw new IllegalArgumentException("That cannot have a length " + fieldElement.getType());
