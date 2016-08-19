@@ -15,11 +15,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class PDUInputStream<T extends PDUSerializable> extends InputStream
 {
-    private final int MAX_SIZE = 100000000;
+    protected static int MAX_SIZE = 100000000;
 
     protected Class<T> pduClass;
     protected BufferedInputStream inputStream;
-    protected byte[] readBuffer = new byte[MAX_SIZE];
+    protected byte[] readBuffer;
 
     boolean isFixedLength = false;
 
@@ -33,6 +33,7 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
 
     public PDUInputStream(Class<T> pduClass, InputStream inputStream)
     {
+        readBuffer = new byte[MAX_SIZE];
         this.pduClass = pduClass;
         this.inputStream = new BufferedInputStream(inputStream);
 
@@ -64,7 +65,7 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
 
     public int waitForBytes() throws IOException
     {
-        return inputStream.read(readBuffer, bytesReady, MAX_SIZE-bytesReady);
+        return inputStream.read(readBuffer, bytesReady, MAX_SIZE - bytesReady);
     }
 
     public T readPDU() throws IOException
@@ -110,6 +111,8 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
     {
         List<Future<T>> nextPDUs = new ArrayList<>();
         bytesReady = 0;
+        int bytesRead = 0;
+        boolean onePDURead = false;
         inputStream.mark(MAX_SIZE);
 
         loop: for (;;)
@@ -122,7 +125,7 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
             if (bytesReady < 0)
                 return null;
 
-            while (bytesReady >= pduLength)
+            while (bytesReady > pduLength)
             {
                 if (isFixedLength)
                 {
@@ -132,25 +135,29 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
                 {
                     pduLength = readLength();
                 }
-                else
+                else if (!onePDURead)
                 {
                     continue loop;
                 }
-                
-                
-                if(isEnoughBytesReady(pduLength))
+
+                if (isEnoughBytesReady(pduLength))
                 {
                     nextPDUs.add(createDecodeTask(pduLength));
+                    onePDURead = true;
                 }
-                else
+                else if (!onePDURead)
                 {
-                    continue loop; 
+                    continue loop;
                 }
 
                 bytesReady -= pduLength;
+                bytesRead += pduLength;
             }
             break loop;
         }
+
+        inputStream.reset();
+        inputStream.skip(bytesRead);
 
         return nextPDUs;
     }
