@@ -144,7 +144,7 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
                 {
                     nextPDUs.add(createDecodeTask(pduLength));
                     onePDURead = true;
-                    
+
                     bytesReady -= pduLength;
                     bytesDecoded += pduLength;
                 }
