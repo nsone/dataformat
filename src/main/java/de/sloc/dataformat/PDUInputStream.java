@@ -35,7 +35,7 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
     {
         readBuffer = new byte[MAX_SIZE];
         this.pduClass = pduClass;
-        this.inputStream = new BufferedInputStream(inputStream);
+        this.inputStream = new BufferedInputStream(inputStream, MAX_SIZE);
 
         int[] metadata = PDU.getLengthMetadata(pduClass);
 
@@ -111,7 +111,7 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
     {
         List<Future<T>> nextPDUs = new ArrayList<>();
         bytesReady = 0;
-        int bytesRead = 0;
+        int bytesDecoded = 0;
         boolean onePDURead = false;
         inputStream.mark(MAX_SIZE);
 
@@ -125,7 +125,7 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
             if (bytesReady < 0)
                 return null;
 
-            while (bytesReady > pduLength)
+            while (bytesReady >= pduLength)
             {
                 if (isFixedLength)
                 {
@@ -144,20 +144,24 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
                 {
                     nextPDUs.add(createDecodeTask(pduLength));
                     onePDURead = true;
+                    
+                    bytesReady -= pduLength;
+                    bytesDecoded += pduLength;
                 }
                 else if (!onePDURead)
                 {
                     continue loop;
                 }
-
-                bytesReady -= pduLength;
-                bytesRead += pduLength;
+                else
+                {
+                }
             }
+
             break loop;
         }
 
         inputStream.reset();
-        inputStream.skip(bytesRead);
+        inputStream.skip(bytesDecoded);
 
         return nextPDUs;
     }
