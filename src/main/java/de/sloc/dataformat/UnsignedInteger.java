@@ -209,7 +209,7 @@ public class UnsignedInteger implements BinaryType
 
     public BigInteger toBigInteger()
     {
-        return new BigInteger(value);
+        return new BigInteger(1, value);
     }
 
     @Override
@@ -296,5 +296,12 @@ public class UnsignedInteger implements BinaryType
     {
         return toNumber() + "";
     }
+
+    public UnsignedInteger invert()
+    {
+        return new UnsignedInteger(toBigInteger().xor(BigInteger.valueOf(2).pow(length * 8).subtract(BigInteger.ONE)));
+    }
+    
+
 
 }
