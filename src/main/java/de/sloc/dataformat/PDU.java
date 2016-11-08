@@ -35,6 +35,7 @@ public class PDU
     private final static Map<Integer, Constructor<?>> ASSIGNABLE_CONSTRUCTOR_CACHE = new HashMap<>();
     private final static Map<Class<? extends BinaryType>, Constructor<? extends BinaryType>> BINARY_TYPE_CONSTRUCTOR_CACHE = new HashMap<>();
     private final static Map<Class<?>, List<AnnotatedElement>> INFO_METHODS_CACHE = new HashMap<>();
+    private final static Map<String, Class<?>> ELEMENT_TYPE_CACHE = new HashMap<>();
     private final static Map<Field, Boolean> SUBTYPE_CACHE = new HashMap<>();
 
     @SuppressWarnings("unchecked")
@@ -146,8 +147,8 @@ public class PDU
 
     @SuppressWarnings("unchecked")
     protected static <T extends BinaryType> Constructor<T> findAssignableConstructor(Class<T> klass, Class<?> valueClass)
-                                                                                                                         throws NoSuchMethodException,
-                                                                                                                         SecurityException
+                                                                                                                          throws NoSuchMethodException,
+                                                                                                                          SecurityException
     {
         int hashKey = klass.hashCode() + valueClass.hashCode();
         if (ASSIGNABLE_CONSTRUCTOR_CACHE.containsKey(hashKey))
@@ -402,8 +403,7 @@ public class PDU
      * @return
      * @throws PDUException
      */
-    protected static <T extends PDUSerializable> Class<T> resolveInstantiableClass(Class<T> klass, byte[] data, int startAtOffset)
-                                                                                                                                  throws PDUException
+    protected static <T extends PDUSerializable> Class<T> resolveInstantiableClass(Class<T> klass, byte[] data, int startAtOffset) throws PDUException
     {
         Map<AnnotatedElement, PDUElement> annotatedElements = resolveAnnotatedElements(klass);
 
@@ -505,8 +505,7 @@ public class PDU
     }
 
     @SuppressWarnings("unchecked")
-    protected static <T extends PDUSerializable> Class<T> resolveSubtype(PDUElement element, Field field, int offset, byte[] data)
-                                                                                                                                  throws PDUException
+    protected static <T extends PDUSerializable> Class<T> resolveSubtype(PDUElement element, Field field, int offset, byte[] data) throws PDUException
     {
         try
         {
@@ -593,7 +592,8 @@ public class PDU
                     byte[] slice = new byte[pduElement.length()];
                     System.arraycopy(data, offset, slice, 0, pduElement.length());
                     long lengthValue = new Length(slice, pduElement.length(), pduElement.args()).toLong();
-                    LengthFieldMetadata lengthFieldMetadata = new LengthFieldMetadata(field.getName(), offset, pduElement.length(), pduElement.args());
+                    LengthFieldMetadata lengthFieldMetadata = new LengthFieldMetadata(field.getName(), offset, pduElement.length(),
+                                                                                      pduElement.args());
                     lengthFieldMetadata.setValue((int) lengthValue);
 
                     if (!pduElement.referencesMethod().equals(""))
@@ -718,14 +718,25 @@ public class PDU
 
     public static Class<?> resolveElementType(String className)
     {
+        Class<?> klass;
         try
         {
-            return Class.forName(className);
+            if (!ELEMENT_TYPE_CACHE.containsKey(className))
+            {
+                klass = Class.forName(className);
+                ELEMENT_TYPE_CACHE.put(className, klass);
+            }
+            else
+            {
+                klass = ELEMENT_TYPE_CACHE.get(className);
+            }
         }
         catch (ClassNotFoundException e)
         {
             throw new IllegalArgumentException(e);
         }
+
+        return klass;
     }
 
     @SuppressWarnings("unchecked")
@@ -772,7 +783,7 @@ public class PDU
                         {
                             result = fieldElement.getInt(serializable);
                         }
-                        else if(fieldElement.getType().equals(short.class))
+                        else if (fieldElement.getType().equals(short.class))
                         {
                             result = fieldElement.getShort(serializable);
                         }
