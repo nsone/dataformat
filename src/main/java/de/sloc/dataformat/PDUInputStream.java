@@ -29,7 +29,7 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
 
     protected int fixedLength;
 
-    protected ExecutorService es = Executors.newFixedThreadPool(3);
+    protected ExecutorService es = Executors.newFixedThreadPool(8);
 
     public PDUInputStream(Class<T> pduClass, InputStream inputStream)
     {
@@ -107,7 +107,7 @@ public class PDUInputStream<T extends PDUSerializable> extends InputStream
 
     protected int bytesReady = 0, offset = 0;
 
-    protected List<Future<T>> nextPDUs() throws IOException
+    protected synchronized List<Future<T>> nextPDUs() throws IOException
     {
         List<Future<T>> nextPDUs = new ArrayList<>();
         bytesReady = 0;
