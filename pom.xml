@@ -49,6 +49,11 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>javax.xml.bind</groupId>
+			<artifactId>jaxb-api</artifactId>
+			<version>2.3.1</version>
+		</dependency>
+		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.11</version>
@@ -61,7 +66,7 @@
 		<repository>
 			<id>maven-datapath-repo</id>
 			<name>DATAPATH MVN Repository</name>
-			<url>s3://maven-repository.datapath.io/</url>
+			<url>s3://mvn-repository.ns1.com/</url>
 		</repository>
 	</distributionManagement>
 
